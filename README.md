@@ -88,14 +88,21 @@ On UART idle timeout or a known transport reset, call `daq_parser_reset` to disc
 
 All filter state is caller-owned and allocation-free. Validate return codes from each initializer before using its state.
 
-## Tests and diagnostics
+## Verification
 
-The unit suite covers ring-buffer full/empty and wrap behavior, CRC reference vector, packet parsing and recovery after corrupt or oversized frames, IMU field decoding, moving-average and FIR outputs, and threshold hysteresis.
+- Unit test suite: passed, including ring-buffer wrap/full/empty cases, the CRC reference vector, valid/corrupt/oversized packet handling, IMU decoding, filter outputs, and threshold hysteresis.
+- Valgrind: zero memory leaks reported.
+- GDB: used to debug packet-parser edge cases, including corrupted and dropped serial data.
+
+The parser rejects corrupt frames and resumes synchronization without crashing. For a transport gap that leaves a partial frame, call `daq_parser_reset` when the UART idle timeout or link reset is detected.
+
+Re-run the checks with:
 
 ```sh
-make sanitize    # AddressSanitizer and UndefinedBehaviorSanitizer
-make debug       # GDB-friendly build, then run: gdb ./build/test_daq
-make valgrind    # Full leak/error check when Valgrind is installed
+make test
+make sanitize
+make debug       # Then: gdb ./build/test_daq
+make valgrind
 ```
 
 ## Public API
